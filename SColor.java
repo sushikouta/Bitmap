@@ -232,6 +232,4 @@ public class SColor {
     public static final int SLATE_GRAY = 0x708090;
     public static final int DARK_SLATE_GRAY = 0x2F4F4F;
     public static final int BLACK = 0x000000;
-
-    public static final int TRANSPARENT = 0x00000000;
 }

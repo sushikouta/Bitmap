@@ -2,6 +2,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 
@@ -11,19 +13,19 @@ import javax.swing.JPanel;
 public class BitMap {
     int width = 0;
     int height = 0;
-    int[][] map = null;
+    SColorMK2[][] map = null;
 
     public BitMap(int width, int height) {
         this.width = width;
         this.height = height;
-        map = new int[width][height];
+        map = new SColorMK2[width][height];
 
-        for (int[] column : map) {
-            Arrays.fill(column, SColor.TRANSPARENT);
+        for (SColorMK2[] column : map) {
+            Arrays.fill(column, SColorMK2.WHITE);
         }
     }
 
-    public void drawLine(double startX, double startY, double deltaX, double deltaY, int stroke, int color) {
+    public void drawLine(double startX, double startY, double deltaX, double deltaY, int stroke, SColorMK2 color) {
         int minX = (int) Math.floor(Math.min(startX, deltaX));
         int minY = (int) Math.floor(Math.min(startY, deltaY));
         int maxX = (int) Math.ceil(Math.max(startX, deltaX)) + stroke;
@@ -32,15 +34,23 @@ public class BitMap {
         for (int x = minX;x != maxX;x++) {
             for (int y = minY;y != maxY;y++) {
                 if (minD2(x, y, startX, startY, deltaX, deltaY) < 1) {
-                    drawPoint(x, y, SColor.setAlpha(color, SColor.toHex(1 - minD2(x, y, startX, startY, deltaX, deltaY))));
+                    drawPoint(x, y, new SColorMK2(color, 1 - minD2(x, y, startX, startY, deltaX, deltaY)));
                 }
             }
         }
     }
 
-    public void drawPoint(int x, int y, int color) {
+    public void background(SColorMK2 color) {
+        for (int x = 0 ;x != width;x++) {
+            for (int y = 0;y != height;y++) {
+                drawPoint(x, y, color);
+            }
+        }
+    }
+
+    public void drawPoint(int x, int y, SColorMK2 color) {
         if (x > -1 && y > -1 && x < width && y < height) {
-            map[x][y] = color;
+            map[x][y] = map[x][y].mix(color);
         }
     }
 
@@ -83,12 +93,62 @@ public class BitMap {
 
                         for (int x = 0;x != width;x++) {
                             for (int y = 0;y != height;y++) {
-                                g2.setColor(new Color(SColor.getRed(map[x][y]), SColor.getGreen(map[x][y]), SColor.getBlue(map[x][y]), SColor.getAlpha(map[x][y])));
+                                g2.setColor(new Color(map[x][y].toNoAlpha()));
                                 g2.drawLine(x, y, x, y);
                             }
                         }
 
                         g.drawImage(b, Math.max(0, (400 - width) / 2), Math.max(0, (400 - height) / 2), null);
+                    }
+                });
+                pack();
+                setResizable(false);
+                setVisible(true);
+            }
+        };
+    }
+    public static void debug(int width, int height, TriConsumer<BitMap, Integer, Integer> action) {
+        new JFrame() {
+            {
+                setDefaultCloseOperation(EXIT_ON_CLOSE);
+                setTitle("BitMap [" + width + "x" + height + "]");
+                add(new JPanel() {
+                    BitMap show = new BitMap(width, height);
+                    {
+                        setPreferredSize(new Dimension(Math.max(400, width), Math.max(400, height)));
+                        addMouseMotionListener(new MouseMotionListener() {
+                            @Override public void mouseDragged(MouseEvent e) {
+                                show = new BitMap(width, height);
+                                action.accept(show, e.getX(), e.getY());
+                                repaint();
+                            }
+                            @Override public void mouseMoved(MouseEvent e) {
+                                show = new BitMap(width, height);
+                                action.accept(show, e.getX(), e.getY());
+                                repaint();
+                            }
+                            
+                        });
+                    }
+
+                    @Override public void paintComponent(Graphics g) {
+                        g.setColor(new Color(SColor.BLACK));
+                        g.fillRect(0, 0, getWidth(), getHeight());
+
+                        BufferedImage b = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+                        Graphics2D g2 = b.createGraphics();
+
+                        g2.setColor(new Color(SColor.WHITE));
+                        g2.fillRect(0, 0, width, height);
+
+                        for (int x = 0;x != width;x++) {
+                            for (int y = 0;y != height;y++) {
+                                g2.setColor(new Color(show.map[x][y].toNoAlpha()));
+                                g2.drawLine(x, y, x, y);
+                            }
+                        }
+
+                        g.drawImage(b, 0, 0, null);
                     }
                 });
                 pack();

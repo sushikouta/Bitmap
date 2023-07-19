@@ -4,12 +4,8 @@ public class Develop {
     }
 
     public Develop() {
-        BitMap bitmap = new BitMap(600, 600);
-
-        System.out.println(SColor.toHtml(SColor.mix(SColor.setAlpha(SColor.BLUE, 0x80) , SColor.RED)));
-
-        bitmap.drawLine(0.5, 0.5, 100.5, 100.5, 1, SColor.MAGENTA);
-
-        bitmap.show();
+        BitMap.debug(400, 400, (window, mouseX, mouseY) -> {
+            window.drawLine(200, 200, mouseX, mouseY, 1, SColorMK2.MAGENTA);
+        });
     }
 }
